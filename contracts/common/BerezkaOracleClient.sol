@@ -49,13 +49,21 @@ contract BerezkaOracleClient is Ownable {
         view
         returns (bool)
     {
+        return computeSignatureDateDelta(_optimisticPriceTimestamp) <= signatureValidityDuractionSec;
+    }
+
+    function computeSignatureDateDelta(uint256 _optimisticPriceTimestamp)
+        public
+        view
+        returns (uint256)
+    {
         uint256 timeDelta = 0;
         if (_optimisticPriceTimestamp >= block.timestamp) {
             timeDelta = _optimisticPriceTimestamp - block.timestamp;
         } else {
             timeDelta = block.timestamp - _optimisticPriceTimestamp;
         }
-        return timeDelta <= signatureValidityDuractionSec;
+        return timeDelta;
     }
 
     // Validates oracle price signature

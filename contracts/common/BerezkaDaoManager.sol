@@ -16,6 +16,16 @@ contract BerezkaDaoManager is Ownable {
     //
     mapping(address => Dao) public daoConfig;
 
+    function _agentAddress(
+        address _token
+    ) public view returns (address) {
+        address agentAddress = daoConfig[_token].agent;
+        // Require that there is an agent (vault) address for a given token
+        //
+        require(agentAddress != address(0), "NO_DAO_FOR_TOKEN");
+        return agentAddress;
+    }
+
     // Adds new DAO to contract.
     // _token - DAO token
     // _tokens - corresponding Tokens service in Aragon, that manages _token
@@ -26,10 +36,6 @@ contract BerezkaDaoManager is Ownable {
         address _tokens,
         address _agent
     ) public onlyOwner {
-        require(_token != address(0), "INVALID_TOKEN_ADDRESS");
-        require(_agent != address(0), "INVALID_TOKEN_ADDRESS");
-        require(_tokens != address(0), "INVALID_TOKENS_ADDRESS");
-
         daoConfig[_token] = Dao(_agent, _tokens);
     }
 
@@ -37,7 +43,6 @@ contract BerezkaDaoManager is Ownable {
     // _token - token to remove
     //
     function deleteDao(address _token) public onlyOwner {
-        require(_token != address(0), "INVALID_TOKEN_ADDRESS");
         delete daoConfig[_token];
     }
 }

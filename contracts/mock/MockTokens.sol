@@ -18,7 +18,7 @@ contract MockTokens is ITokens, Ownable {
         daoToken.burnPrivileged(_holder, _amount);
     }
 
-    function mint(address _to, uint256 _amount) override external onlyOwner {
+    function mint(address _to, uint256 _amount) override external {
         daoToken.mint(_to, _amount);
     }
 }

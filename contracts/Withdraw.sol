@@ -70,7 +70,6 @@ contract BerezkaWithdraw is
             _optimisticPrice,
             _targetToken
         );
-        require(optimisticAmount > 0, "INVALID_TOKEN_AMOUNT");
         
         _doWithdraw(
             _amount,
@@ -100,10 +99,7 @@ contract BerezkaWithdraw is
         address _user,
         uint256 _optimisticAmount
     ) internal {
-        // Require that there is an agent (vault) address for a given token
-        //
-        address agentAddress = daoConfig[_token].agent;
-        require(agentAddress != address(0), "NO_DAO_FOR_TOKEN");
+        address agentAddress = _agentAddress(_token);
         
         IERC20 targetToken = IERC20(_targetToken);
         require(

@@ -31,7 +31,9 @@ contract BerezkaStableCoinManager is Ownable {
         address _targetToken
     ) public view returns (uint256) {
         IERC20Metadata targetToken = IERC20Metadata(_targetToken);
-        return _amount * _price / 10 ** (24 - targetToken.decimals());
+        uint256 result = _amount * _price / 10 ** (24 - targetToken.decimals());
+        require(result > 0, "INVALID_TOKEN_AMOUNT");
+        return result;
     }
 
     // Adds possible tokens (stableconins) to use
