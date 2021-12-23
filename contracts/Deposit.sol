@@ -9,20 +9,20 @@ import "./common/BerezkaOracleClient.sol";
 import "./common/BerezkaDaoManager.sol";
 import "./common/BerezkaStableCoinManager.sol";
 
-// This contract provides Withdraw function for Berezka DAO
+// This contract provides Deposit function for Berezka DAO
 // Basic flow is:
 //  1. User obtains signed price data from trusted off-chain Oracle
 //  2. Exchange rate is computed
-//  3. User's tokens are burned (no approval need thanks to Aragon)
-//  4. Stable coins are transferred to user
+//  3. User's stable coins are transferred to agent
+//  4. DAO tokens are minted to user
 //
-contract BerezkaWithdraw is
+contract BerezkaDeposit is
     BerezkaOracleClient,
     BerezkaDaoManager,
     BerezkaStableCoinManager
 {
     // Events
-    event WithdrawSuccessEvent(
+    event DepositSuccessEvent(
         address indexed daoToken,
         uint256 daoTokenAmount,
         address indexed stableToken,
@@ -32,14 +32,14 @@ contract BerezkaWithdraw is
         uint256 timestamp
     );
 
-    // Main function. Allows user (msg.sender) to withdraw funds from DAO.
-    // _amount - amount of DAO tokens to exhange
+    // Main function. Allows user (msg.sender) to deposit funds to DAO.
+    // _amount - amount of DAO tokens to recieve
     // _token - token of DAO to exchange
     // _targetToken - token to receive in exchange
     // _optimisticPrice - an optimistic price of DAO token. Used to check if DAO Agent
     //                    have enough funds on it's balance. Is not used to calculare
     //                    use returns
-    function withdraw(
+    function deposit(
         uint256 _amount,
         address _token,
         address _targetToken,
@@ -60,10 +60,8 @@ contract BerezkaWithdraw is
         //
         require(_amount > 0, "ZERO_TOKEN_AMOUNT");
 
-        _checkUserBalance(_amount, _token, msg.sender);
-
-        // Require that an agent have funds to fullfill request (optimisitcally)
-        // And that this contract can withdraw neccesary amount of funds from agent
+        // Require that user have funds to fullfill request (optimisitcally)
+        // And that this contract can receive neccesary amount of funds from user
         //
         uint256 optimisticAmount = computeExchange(
             _amount,
@@ -71,18 +69,12 @@ contract BerezkaWithdraw is
             _targetToken
         );
         require(optimisticAmount > 0, "INVALID_TOKEN_AMOUNT");
-        
-        _doWithdraw(
-            _amount,
-            _token,
-            _targetToken,
-            msg.sender,
-            optimisticAmount
-        );
 
-        // Emit withdraw success event
+        _doDeposit(_amount, _token, _targetToken, msg.sender, optimisticAmount);
+
+        // Emit deposit success event
         //
-        emit WithdrawSuccessEvent(
+        emit DepositSuccessEvent(
             _token,
             _amount,
             _targetToken,
@@ -93,7 +85,7 @@ contract BerezkaWithdraw is
         );
     }
 
-    function _doWithdraw(
+    function _doDeposit(
         uint256 _amount,
         address _token,
         address _targetToken,
@@ -104,35 +96,18 @@ contract BerezkaWithdraw is
         //
         address agentAddress = daoConfig[_token].agent;
         require(agentAddress != address(0), "NO_DAO_FOR_TOKEN");
-        
-        IERC20 targetToken = IERC20(_targetToken);
-        require(
-            targetToken.balanceOf(agentAddress) >= _optimisticAmount,
-            "INSUFFICIENT_FUNDS_ON_AGENT"
-        );
 
+        IERC20 targetToken = IERC20(_targetToken);
         // Perform actual exchange
         //
-        IAgent agent = IAgent(agentAddress);
-        agent.transfer(_targetToken, _user, _optimisticAmount);
+        require(
+            targetToken.transferFrom(_user, agentAddress, _optimisticAmount),
+            "NOT_ENOUGH_TOKENS_ON_BALANCE"
+        );
 
-        // Burn tokens
+        // Mint tokens
         //
         ITokens tokens = ITokens(daoConfig[_token].tokens);
-        tokens.burn(_user, _amount);
-    }
-
-    function _checkUserBalance(
-        uint256 _amount,
-        address _token,
-        address _user
-    ) internal view {
-        // Check DAO token balance on iuser
-        //
-        IERC20 token = IERC20(_token);
-        require(
-            token.balanceOf(_user) >= _amount,
-            "NOT_ENOUGH_TOKENS_TO_BURN_ON_BALANCE"
-        );
+        tokens.mint(_user, _amount);
     }
 }

@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.4;
 
-import "../ITokens.sol";
+import "../api/ITokens.sol";
 import "./MockERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -18,7 +18,7 @@ contract MockTokens is ITokens, Ownable {
         daoToken.burnPrivileged(_holder, _amount);
     }
 
-    function mint(address _to, uint256 _amount) external onlyOwner {
+    function mint(address _to, uint256 _amount) override external onlyOwner {
         daoToken.mint(_to, _amount);
     }
 }
