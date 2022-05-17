@@ -29,8 +29,20 @@ contract BerezkaDeposit is
         uint256 stableTokenAmount,
         address indexed sender,
         uint256 price,
-        uint256 timestamp
+        uint256 timestamp,
+        string ref
     );
+
+    struct DepositData {
+        uint256 amount;
+        address token;
+        address targetToken;
+        uint256 optimisticPrice;
+        uint256 optimisticPriceTimestamp;
+        bytes signature;
+        string ref;
+        address sender;
+    }
 
     // Main function. Allows user (msg.sender) to deposit funds to DAO.
     // _amount - amount of DAO tokens to recieve
@@ -45,7 +57,8 @@ contract BerezkaDeposit is
         address _targetToken,
         uint256 _optimisticPrice,
         uint256 _optimisticPriceTimestamp,
-        bytes memory _signature
+        bytes memory _signature,
+        string memory _ref
     )
         public
         withValidOracleData(
@@ -60,27 +73,49 @@ contract BerezkaDeposit is
         //
         require(_amount > 0, "ZERO_TOKEN_AMOUNT");
 
+        DepositData memory data = DepositData({
+            amount: _amount,
+            token: _token,
+            targetToken: _targetToken,
+            optimisticPrice: _optimisticPrice,
+            optimisticPriceTimestamp: _optimisticPriceTimestamp,
+            signature: _signature,
+            ref: _ref,
+            sender: msg.sender
+        });
+
+        _deposit(data);
+    }
+
+    function _deposit(DepositData memory _data) internal {
         // Require that user have funds to fullfill request (optimisitcally)
         // And that this contract can receive neccesary amount of funds from user
         //
         uint256 optimisticAmount = computeExchange(
-            _amount,
-            _optimisticPrice,
-            _targetToken
+            _data.amount,
+            _data.optimisticPrice,
+            _data.targetToken
         );
 
-        _doDeposit(_amount, _token, _targetToken, msg.sender, optimisticAmount);
+        _doDeposit(
+            _data.amount, 
+            _data.token, 
+            _data.targetToken, 
+            _data.sender, 
+            optimisticAmount
+        );
 
         // Emit deposit success event
         //
         emit DepositSuccessEvent(
-            _token,
-            _amount,
-            _targetToken,
+            _data.token,
+            _data.amount,
+            _data.targetToken,
             optimisticAmount,
-            msg.sender,
-            _optimisticPrice,
-            _optimisticPriceTimestamp
+            _data.sender,
+            _data.optimisticPrice,
+            _data.optimisticPriceTimestamp,
+            _data.ref
         );
     }
 

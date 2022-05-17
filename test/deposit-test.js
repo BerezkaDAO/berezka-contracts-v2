@@ -95,7 +95,8 @@ describe("Deposit", function () {
       usdcToken.address,
       price,
       ts,
-      signature
+      signature,
+      ""
     )
 
     // Verify that after Deposit investor gets it's DAO token's minted
@@ -166,7 +167,8 @@ describe("Deposit", function () {
       usdcToken.address,
       price,
       ts,
-      signature
+      signature,
+      ""
     )
     ).to.be.revertedWith("ZERO_TOKEN_AMOUNT")
   })
@@ -223,7 +225,8 @@ describe("Deposit", function () {
       usdcToken.address,
       price,
       ts,
-      signature
+      signature,
+      ""
     )
     ).to.be.revertedWith("ERC20: transfer amount exceeds balance")
   })
