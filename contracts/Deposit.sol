@@ -16,6 +16,14 @@ import "./common/BerezkaStableCoinManager.sol";
 //  3. User's stable coins are transferred to agent
 //  4. DAO tokens are minted to user
 //
+interface IERC20TransferFrom {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) external;
+}
+
 contract BerezkaDeposit is
     BerezkaOracleClient,
     BerezkaDaoManager,
@@ -128,13 +136,11 @@ contract BerezkaDeposit is
     ) internal {
         address agentAddress = _agentAddress(_token);
 
-        IERC20 targetToken = IERC20(_targetToken);
+        IERC20TransferFrom targetToken = IERC20TransferFrom(_targetToken);
+        
         // Perform actual exchange
         //
-        require(
-            targetToken.transferFrom(_user, agentAddress, _optimisticAmount),
-            "NOT_ENOUGH_TOKENS_ON_BALANCE"
-        );
+        targetToken.transferFrom(_user, agentAddress, _optimisticAmount);
 
         // Mint tokens
         //

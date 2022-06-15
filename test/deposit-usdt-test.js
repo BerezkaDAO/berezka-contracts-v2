@@ -22,15 +22,15 @@ const deployContract = async () => {
   return await depositContract.deployed();
 }
 
-const deployToken = async (name, decimals = 18) => {
-  const MockERC20 = await ethers.getContractFactory("MockERC20");
-  const mockERC20 = await MockERC20.deploy(name, name, decimals);
-  return await mockERC20.deployed();
+const deployToken = async (name, decimals = 6) => {
+  const TetherToken = await ethers.getContractFactory("TetherToken");
+  const tetherToken = await TetherToken.deploy(100000 * 10 ** decimals, name, name, decimals);
+  return await tetherToken.deployed();
 }
 
 const tokenAt = async (address) => {
-  const MockERC20 = await ethers.getContractFactory("MockERC20");
-  return await MockERC20.attach(address)
+  const TetherToken = await ethers.getContractFactory("TetherToken");
+  return await TetherToken.attach(address)
 }
 
 const signPrice = async (price, ts, token) => {
@@ -39,7 +39,7 @@ const signPrice = async (price, ts, token) => {
   return await wallet.signMessage(ethers.utils.arrayify(hash))
 }
 
-describe("Deposit", function () {
+describe("Deposit (USDT)", function () {
 
   it("Should Deposit", async function () {
     const [_, investor] = await ethers.getSigners()
@@ -52,7 +52,7 @@ describe("Deposit", function () {
     const daoTokenManager = await deployTokenManager("DAO")
     const daoTokenAddress = await daoTokenManager.daoToken()
 
-    const usdcToken = await deployToken("USDC", 6)
+    const usdtToken = await deployToken("USDT", 6)
 
     // Sign price data by oracle (emulate FLEX price)
     //
@@ -67,15 +67,15 @@ describe("Deposit", function () {
 
     // Mint some (price ** 100) stablecoins to investor address
     //
-    await usdcToken.mint(investor.address, "419938900")
-    await usdcToken.connect(investor).approve(
+    await usdtToken.transfer(investor.address, "419938900")
+    await usdtToken.connect(investor).approve(
       depositContract.address,
       "419938900"
     )
 
-    // Add USDC to stablecoins whitelist
+    // Add USDT to stablecoins whitelist
     //
-    await depositContract.addWhitelistTokens([usdcToken.address])
+    await depositContract.addWhitelistTokens([usdtToken.address])
 
     // Add DAO configuration 
     //
@@ -90,7 +90,7 @@ describe("Deposit", function () {
     const result = await depositContract.connect(investor).deposit(
       amount,
       daoTokenAddress,
-      usdcToken.address,
+      usdtToken.address,
       price,
       ts,
       signature,
@@ -108,7 +108,7 @@ describe("Deposit", function () {
 
     // Verify that after Deposit agent gets stablecoins (419.9389)
     //
-    const stableBalanceOfAgent = await usdcToken.balanceOf(agent.address)
+    const stableBalanceOfAgent = await usdtToken.balanceOf(agent.address)
 
     expect(stableBalanceOfAgent).to.eq(419938900)
   })
@@ -124,7 +124,7 @@ describe("Deposit", function () {
     const daoTokenManager = await deployTokenManager("DAO")
     const daoTokenAddress = await daoTokenManager.daoToken()
 
-    const usdcToken = await deployToken("USDC", 6)
+    const usdtToken = await deployToken("USDT", 6)
 
     // Sign price data by oracle (emulate FLEX price)
     //
@@ -139,15 +139,15 @@ describe("Deposit", function () {
 
     // Mint some (price ** 100) stablecoins to investor address
     //
-    await usdcToken.mint(investor.address, "419938900")
-    await usdcToken.connect(investor).approve(
+    await usdtToken.transfer(investor.address, "419938900")
+    await usdtToken.connect(investor).approve(
       depositContract.address,
       "419938900"
     )
 
-    // Add USDC to stablecoins whitelist
+    // Add USDT to stablecoins whitelist
     //
-    await depositContract.addWhitelistTokens([usdcToken.address])
+    await depositContract.addWhitelistTokens([usdtToken.address])
 
     // Add DAO configuration 
     //
@@ -162,7 +162,7 @@ describe("Deposit", function () {
     await expect(depositContract.connect(investor).deposit(
       "0",
       daoTokenAddress,
-      usdcToken.address,
+      usdtToken.address,
       price,
       ts,
       signature,
@@ -182,7 +182,7 @@ describe("Deposit", function () {
     const daoTokenManager = await deployTokenManager("DAO")
     const daoTokenAddress = await daoTokenManager.daoToken()
 
-    const usdcToken = await deployToken("USDC", 6)
+    const usdtToken = await deployToken("USDT", 6)
 
     // Sign price data by oracle (emulate FLEX price)
     //
@@ -197,15 +197,15 @@ describe("Deposit", function () {
 
     // Mint some (price ** 100) stablecoins to investor address
     //
-    await usdcToken.mint(investor.address, "41993890")
-    await usdcToken.connect(investor).approve(
+    await usdtToken.transfer(investor.address, "41993890")
+    await usdtToken.connect(investor).approve(
       depositContract.address,
       "419938900"
     )
 
-    // Add USDC to stablecoins whitelist
+    // Add USDT to stablecoins whitelist
     //
-    await depositContract.addWhitelistTokens([usdcToken.address])
+    await depositContract.addWhitelistTokens([usdtToken.address])
 
     // Add DAO configuration 
     //
@@ -220,13 +220,13 @@ describe("Deposit", function () {
     await expect(depositContract.connect(investor).deposit(
       amount,
       daoTokenAddress,
-      usdcToken.address,
+      usdtToken.address,
       price,
       ts,
       signature,
       ""
     )
-    ).to.be.revertedWith("ERC20: transfer amount exceeds balance")
+    ).to.be.reverted
   })
 
 });
